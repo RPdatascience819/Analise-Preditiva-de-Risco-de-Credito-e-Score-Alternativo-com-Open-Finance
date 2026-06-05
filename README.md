@@ -26,3 +26,13 @@ Para executar o dashboard:
 ```powershell
 streamlit run dashboard\app.py
 ```
+
+## Kaggle
+
+A autenticacao local usa um token salvo em `.kaggle/access_token`, pasta ignorada pelo Git.
+
+Para chamar a API pelo ambiente do projeto:
+
+```powershell
+.\scripts\kaggle.ps1 datasets list --search credit --page 1
+```

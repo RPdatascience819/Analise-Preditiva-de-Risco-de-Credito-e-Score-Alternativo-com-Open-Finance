@@ -18,6 +18,7 @@ env/
 .env
 .env.*
 !.env.example
+.kaggle/
 
 # Data artifacts
 data/raw/*
