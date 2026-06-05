@@ -14,5 +14,8 @@ MODELS_DIR = PROJECT_ROOT / "models"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
+RAW_HOME_CREDIT_ZIP = RAW_DATA_DIR / "home-credit-default-risk.zip"
+PROCESSED_TRAIN_DATASET = PROCESSED_DATA_DIR / "home_credit_train_enriched.parquet"
+
 RANDOM_STATE = 42
-TARGET_COLUMN = "target"
+TARGET_COLUMN = "TARGET"

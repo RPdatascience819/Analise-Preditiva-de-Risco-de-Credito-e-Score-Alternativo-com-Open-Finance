@@ -30,6 +30,14 @@ Para executar o dashboard:
 streamlit run dashboard\app.py
 ```
 
+Para gerar a base supervisionada enriquecida:
+
+```powershell
+python -m src.build_dataset
+```
+
+Essa etapa usa `application_train.csv` como base supervisionada, com `TARGET` indicando inadimplencia (`0 = pagou`, `1 = inadimpliu`), e agrega historico financeiro de `bureau.csv`, `previous_application.csv` e `installments_payments.csv`.
+
 Para rodar os testes:
 
 ```powershell

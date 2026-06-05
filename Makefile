@@ -9,5 +9,8 @@ notebook:
 dashboard:
 	streamlit run dashboard/app.py
 
+dataset:
+	python -m src.build_dataset
+
 test:
 	python -m unittest discover -s tests

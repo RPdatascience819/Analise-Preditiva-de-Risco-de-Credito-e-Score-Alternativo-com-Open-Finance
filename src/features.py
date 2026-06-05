@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 
@@ -16,3 +17,111 @@ def add_income_expense_ratio(
     if income_col in featured.columns and expense_col in featured.columns:
         featured[output_col] = featured[expense_col] / featured[income_col].replace(0, pd.NA)
     return featured
+
+
+def criar_features_open_finance_simulado(df: pd.DataFrame) -> pd.DataFrame:
+    """Create simulated Open Finance-style features from the supervised base."""
+    required_columns = {"AMT_INCOME_TOTAL", "AMT_ANNUITY", "TARGET"}
+    missing_columns = required_columns.difference(df.columns)
+    if missing_columns:
+        missing = ", ".join(sorted(missing_columns))
+        raise KeyError(f"Missing required columns for Open Finance features: {missing}")
+
+    featured = df.copy()
+    featured["RENDA_RECORRENTE_MEDIA_6M"] = featured["AMT_INCOME_TOTAL"] / 12
+    featured["COMPROMETIMENTO_RENDA_ESTIMADO"] = featured["AMT_ANNUITY"] / (
+        featured["AMT_INCOME_TOTAL"] / 12 + 1
+    )
+    featured["VOLATILIDADE_SALDO_6M"] = (
+        np.random.default_rng(42).normal(0.18, 0.06, len(featured)).clip(0.02, 0.60)
+    )
+    featured["ATRASOS_PAGAMENTO_12M"] = (
+        featured["TARGET"] + np.random.default_rng(7).poisson(0.25, len(featured))
+    ).clip(0, 6)
+    featured["INDICE_ESTABILIDADE_FINANCEIRA"] = (
+        1
+        / (1 + featured["COMPROMETIMENTO_RENDA_ESTIMADO"])
+        * (1 - featured["VOLATILIDADE_SALDO_6M"])
+        * (1 / (1 + featured["ATRASOS_PAGAMENTO_12M"]))
+    )
+    return featured
+
+
+def aggregate_bureau_history(bureau: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate bureau credit history by current customer id."""
+    bureau = bureau.copy()
+    bureau["BUREAU_IS_ACTIVE"] = (bureau["CREDIT_ACTIVE"] == "Active").astype(int)
+    bureau["BUREAU_IS_CLOSED"] = (bureau["CREDIT_ACTIVE"] == "Closed").astype(int)
+
+    aggregated = bureau.groupby("SK_ID_CURR").agg(
+        BUREAU_QTD_CREDITOS=("SK_ID_BUREAU", "count"),
+        BUREAU_QTD_CREDITOS_ATIVOS=("BUREAU_IS_ACTIVE", "sum"),
+        BUREAU_QTD_CREDITOS_FECHADOS=("BUREAU_IS_CLOSED", "sum"),
+        BUREAU_DIAS_CREDITO_MEDIO=("DAYS_CREDIT", "mean"),
+        BUREAU_DIAS_CREDITO_MAIS_RECENTE=("DAYS_CREDIT", "max"),
+        BUREAU_DIAS_ATUALIZACAO_MEDIO=("DAYS_CREDIT_UPDATE", "mean"),
+        BUREAU_ATRASO_DIAS_MAX=("CREDIT_DAY_OVERDUE", "max"),
+        BUREAU_ATRASO_DIAS_MEDIO=("CREDIT_DAY_OVERDUE", "mean"),
+        BUREAU_VALOR_CREDITO_TOTAL=("AMT_CREDIT_SUM", "sum"),
+        BUREAU_VALOR_DIVIDA_TOTAL=("AMT_CREDIT_SUM_DEBT", "sum"),
+        BUREAU_VALOR_VENCIDO_TOTAL=("AMT_CREDIT_SUM_OVERDUE", "sum"),
+        BUREAU_ANUIDADE_MEDIA=("AMT_ANNUITY", "mean"),
+    )
+    aggregated["BUREAU_RATIO_DIVIDA_CREDITO"] = (
+        aggregated["BUREAU_VALOR_DIVIDA_TOTAL"] / (aggregated["BUREAU_VALOR_CREDITO_TOTAL"] + 1)
+    )
+    return aggregated.reset_index()
+
+
+def aggregate_previous_applications(previous: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate previous Home Credit applications by current customer id."""
+    previous = previous.copy()
+    previous["PREV_IS_APPROVED"] = (previous["NAME_CONTRACT_STATUS"] == "Approved").astype(int)
+    previous["PREV_IS_REFUSED"] = (previous["NAME_CONTRACT_STATUS"] == "Refused").astype(int)
+
+    aggregated = previous.groupby("SK_ID_CURR").agg(
+        PREV_QTD_SOLICITACOES=("SK_ID_PREV", "count"),
+        PREV_QTD_APROVADAS=("PREV_IS_APPROVED", "sum"),
+        PREV_QTD_RECUSADAS=("PREV_IS_REFUSED", "sum"),
+        PREV_VALOR_SOLICITADO_MEDIO=("AMT_APPLICATION", "mean"),
+        PREV_VALOR_SOLICITADO_TOTAL=("AMT_APPLICATION", "sum"),
+        PREV_VALOR_CREDITO_MEDIO=("AMT_CREDIT", "mean"),
+        PREV_VALOR_CREDITO_TOTAL=("AMT_CREDIT", "sum"),
+        PREV_ANUIDADE_MEDIA=("AMT_ANNUITY", "mean"),
+        PREV_PRAZO_MEDIO=("CNT_PAYMENT", "mean"),
+        PREV_DIAS_DECISAO_MEDIO=("DAYS_DECISION", "mean"),
+    )
+    aggregated["PREV_TAXA_APROVACAO"] = (
+        aggregated["PREV_QTD_APROVADAS"] / aggregated["PREV_QTD_SOLICITACOES"].replace(0, pd.NA)
+    )
+    return aggregated.reset_index()
+
+
+def aggregate_installments_payments(installments: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate installment payment behavior by current customer id."""
+    installments = installments.copy()
+    installments["INSTALL_DIAS_ATRASO"] = (
+        installments["DAYS_ENTRY_PAYMENT"] - installments["DAYS_INSTALMENT"]
+    ).clip(lower=0)
+    installments["INSTALL_VALOR_PAGO_A_MENOR"] = (
+        installments["AMT_INSTALMENT"] - installments["AMT_PAYMENT"]
+    ).clip(lower=0)
+    installments["INSTALL_IS_ATRASO"] = (installments["INSTALL_DIAS_ATRASO"] > 0).astype(int)
+
+    aggregated = installments.groupby("SK_ID_CURR").agg(
+        INSTALL_QTD_PAGAMENTOS=("SK_ID_PREV", "count"),
+        INSTALL_VALOR_PARCELAS_TOTAL=("AMT_INSTALMENT", "sum"),
+        INSTALL_VALOR_PAGAMENTOS_TOTAL=("AMT_PAYMENT", "sum"),
+        INSTALL_VALOR_PARCELA_MEDIO=("AMT_INSTALMENT", "mean"),
+        INSTALL_DIAS_ATRASO_MEDIO=("INSTALL_DIAS_ATRASO", "mean"),
+        INSTALL_DIAS_ATRASO_MAX=("INSTALL_DIAS_ATRASO", "max"),
+        INSTALL_QTD_ATRASOS=("INSTALL_IS_ATRASO", "sum"),
+        INSTALL_VALOR_PAGO_A_MENOR_TOTAL=("INSTALL_VALOR_PAGO_A_MENOR", "sum"),
+    )
+    aggregated["INSTALL_RATIO_ATRASOS"] = (
+        aggregated["INSTALL_QTD_ATRASOS"] / aggregated["INSTALL_QTD_PAGAMENTOS"].replace(0, pd.NA)
+    )
+    aggregated["INSTALL_RATIO_PAGAMENTO"] = (
+        aggregated["INSTALL_VALOR_PAGAMENTOS_TOTAL"] / (aggregated["INSTALL_VALOR_PARCELAS_TOTAL"] + 1)
+    )
+    return aggregated.reset_index()
