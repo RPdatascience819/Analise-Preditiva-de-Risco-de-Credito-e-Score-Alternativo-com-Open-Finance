@@ -1,6 +1,6 @@
 # Analise Preditiva de Risco de Credito e Score Alternativo com Open Finance
 
-Projeto para construir uma pipeline de risco de credito usando dados financeiros, engenharia de features e um score alternativo inspirado em Open Finance.
+Pipeline de risco de credito usando dados financeiros, engenharia de features e um score alternativo inspirado em Open Finance.
 
 ## Estrutura
 
