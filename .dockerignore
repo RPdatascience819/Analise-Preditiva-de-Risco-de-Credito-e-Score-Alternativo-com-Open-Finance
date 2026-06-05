@@ -1,0 +1,14 @@
+.git/
+.kaggle/
+venv/
+.venv/
+env/
+__pycache__/
+.ipynb_checkpoints/
+.env
+.env.*
+data/raw/*
+data/interim/*
+data/processed/*
+models/*
+reports/*

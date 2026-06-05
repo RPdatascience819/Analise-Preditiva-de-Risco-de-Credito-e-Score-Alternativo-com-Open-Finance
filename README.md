@@ -5,12 +5,15 @@ Pipeline de risco de credito usando dados financeiros, engenharia de features e 
 ## Estrutura
 
 ```text
-data/raw/          Dados originais baixados
-data/processed/    Dados tratados
-notebooks/         Analises, features, modelagem e scorecard
-src/               Funcoes reutilizaveis
-models/            Modelos salvos
-dashboard/         Aplicacao Streamlit
+data/raw/                  Dados originais, nunca editados
+data/interim/              Bases intermediarias
+data/processed/            Dataset modelavel final
+notebooks/                 Analises, features, modelagem, scorecard e monitoramento
+src/                       Modulos reutilizaveis da pipeline
+dashboard/                 Aplicacao Streamlit
+models/                    Modelos salvos
+reports/figures/           Figuras e artefatos visuais de analise
+tests/                     Testes automatizados
 ```
 
 ## Como usar
@@ -25,6 +28,12 @@ Para executar o dashboard:
 
 ```powershell
 streamlit run dashboard\app.py
+```
+
+Para rodar os testes:
+
+```powershell
+python -m unittest discover -s tests
 ```
 
 ## Kaggle
