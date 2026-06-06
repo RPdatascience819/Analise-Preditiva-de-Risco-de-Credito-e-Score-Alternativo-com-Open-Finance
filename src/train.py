@@ -32,7 +32,11 @@ def train_baseline_classifier(
         random_state=random_state,
         stratify=y,
     )
-    model = RandomForestClassifier(random_state=random_state)
+    model = RandomForestClassifier(
+        random_state=random_state,
+        min_samples_leaf=1,
+        max_features="sqrt",
+    )
     model.fit(X_train, y_train)
     return model, X_train, X_test, y_train, y_test
 
