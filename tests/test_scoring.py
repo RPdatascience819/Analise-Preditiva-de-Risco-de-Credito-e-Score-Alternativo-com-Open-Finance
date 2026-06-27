@@ -3,7 +3,11 @@ from typing import cast
 
 import pandas as pd
 
-from src.scoring import assign_risk_band, probability_to_score
+from src.scoring import (
+    assign_risk_band,
+    probability_to_score,
+    probability_to_scorecard_points,
+)
 
 
 class ScoringTest(unittest.TestCase):
@@ -20,6 +24,27 @@ class ScoringTest(unittest.TestCase):
 
         self.assertEqual(list(scores), [850.0, 575.0, 300.0])
         self.assertEqual(list(scores), [850.0, 575.0, 300.0])
+
+    def test_scorecard_points_pdo_scaling(self):
+        # odds == odds_ref (50) -> score_ref (600)
+        self.assertEqual(probability_to_scorecard_points(1 / 51), 600)
+        # doubling the good/bad odds adds PDO points (+20)
+        self.assertEqual(probability_to_scorecard_points(1 / 101), 620)
+
+    def test_scorecard_points_monotonic_and_clip(self):
+        high_risk = probability_to_scorecard_points(0.95)
+        low_risk = probability_to_scorecard_points(0.02)
+        self.assertLess(high_risk, low_risk)  # maior prob -> menor score
+        self.assertGreaterEqual(probability_to_scorecard_points(1.0), 300)
+        self.assertLessEqual(probability_to_scorecard_points(0.0), 850)
+
+    def test_scorecard_points_with_series(self):
+        probabilities = pd.Series([0.02, 0.5, 0.95], index=[10, 20, 30])
+
+        points = probability_to_scorecard_points(probabilities)
+        self.assertIsInstance(points, pd.Series)
+        self.assertEqual(list(points.index), [10, 20, 30])
+        self.assertTrue(points.iloc[0] > points.iloc[1] > points.iloc[2])
 
     def test_assign_risk_band(self):
         self.assertEqual(assign_risk_band(750), "low")
