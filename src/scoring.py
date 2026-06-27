@@ -46,10 +46,34 @@ def probability_to_scorecard_points(
     return points
 
 
-def assign_risk_band(score: float) -> str:
-    """Assign a simple risk band from a credit score."""
-    if score >= 750:
+def adjust_probability_to_prior(probability, target_prior: float, source_prior: float = 0.5):
+    """Re-scale probabilities from a model trained under ``source_prior`` back to
+    the true population prior ``target_prior``.
+
+    Models trained on rebalanced data (e.g. SMOTE 50/50) output probabilities
+    biased toward the training prior. This corrects the intercept shift on the
+    log-odds: ``logit_true = logit_model + logit(target) - logit(source)``,
+    preserving the ranking. Returns probabilities on the true scale (Series
+    input preserves index).
+    """
+    eps = 1e-9
+    p = np.clip(probability, eps, 1 - eps)
+    logit = np.log(p / (1 - p))
+    adj = np.log(target_prior / (1 - target_prior)) - np.log(source_prior / (1 - source_prior))
+    corrected = 1 / (1 + np.exp(-(logit + adj)))
+    if isinstance(probability, pd.Series):
+        return pd.Series(corrected, index=probability.index)
+    return corrected
+
+
+def assign_risk_band(score: float, medium_min: float = 650, low_min: float = 750) -> str:
+    """Assign a risk band from a credit score.
+
+    Thresholds are configurable so bands can be calibrated to the actual score
+    distribution (e.g. tercile cut-offs) instead of fixed absolute values.
+    """
+    if score >= low_min:
         return "low"
-    if score >= 650:
+    if score >= medium_min:
         return "medium"
     return "high"
