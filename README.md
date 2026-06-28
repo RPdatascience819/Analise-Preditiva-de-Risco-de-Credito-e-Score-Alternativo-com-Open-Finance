@@ -3,7 +3,7 @@
 [![CI](https://github.com/RPdatascience819/Analise-Preditiva-de-Risco-de-Credito-e-Score-Alternativo-com-Open-Finance/actions/workflows/ci.yml/badge.svg)](https://github.com/RPdatascience819/Analise-Preditiva-de-Risco-de-Credito-e-Score-Alternativo-com-Open-Finance/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 
-Pipeline ponta a ponta de **risco de crédito**: do dado bruto ao **score acionável (300–850)**, com pré-processamento sem *data leakage*, modelo campeão (LightGBM), interpretabilidade (SHAP), scorecard calibrado, monitoramento de *drift* e *fairness*, e um app interativo de scoring.
+Pipeline ponta a ponta de **risco de crédito**: do dado bruto ao **score acionável (300–850)**, com pré-processamento sem *data leakage*, modelo (LightGBM), interpretabilidade (SHAP), scorecard calibrado, monitoramento de *drift* e *fairness*, e um app interativo de scoring.
 
 > Base: [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk) (`TARGET`: `0 = pagou`, `1 = inadimpliu`; taxa real de inadimplência ≈ 8%). O diferencial do projeto é simular **features de Open Finance** (renda recorrente, comprometimento, volatilidade de saldo) sobre essa base.
 
